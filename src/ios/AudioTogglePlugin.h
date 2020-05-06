@@ -5,4 +5,5 @@ FOUNDATION_EXPORT NSString *const AudioOptionsAvailable;
 
 @interface AudioTogglePlugin : CDVPlugin
 - (void)setAudioMode:(CDVInvokedUrlCommand*)command;
+- (BOOL)getAudioMode;
 @end
