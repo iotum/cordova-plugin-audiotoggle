@@ -7,7 +7,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/neohelden/cordova-plugin-audiotoggle.git"
+        "url": "git+https://github.com/rex-iotum/cordova-plugin-audiotoggle.git"
     },
     "platforms": [
         "android",
