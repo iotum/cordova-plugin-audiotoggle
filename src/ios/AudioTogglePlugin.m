@@ -51,11 +51,12 @@ NSString *const AudioOptionsAvailable = @"audioOutputsAvailable";
 }
 
 
-- (void) getAudioMode {
+- (BOOL) getAudioMode:(CDVInvokedUrlCommand *)command {
 	CDVPluginResult* pluginResult = nil;
 	pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
 	[pluginResult setKeepCallbackAsBool:YES];
-	[self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
+	[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  return YES;
 }
 
 - (void)setAudioMode:(CDVInvokedUrlCommand *)command
