@@ -27,37 +27,37 @@ public class AudioTogglePlugin extends CordovaPlugin {
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-    if (action.equals(ACTION_SET_AUDIO_MODE)) {
-      if (!setAudioMode(args.getString(0))) {
-        callbackContext.error("Invalid audio mode");
-        return false;
-      }
-
-      return true;
-    } else if (action.equals(ACTION_SET_BLUETOOTH_ON)) {
-      setBluetoothScoOn(args.getBoolean(0));
-      return true;
-    } else if (action.equals(ACTION_SET_SPEAKER_ON)) {
-      setSpeakerphoneOn(args.getBoolean(0));
-      return true;
-    } else if (action.equals(ACTION_GET_OUTPUT_DEVICES)) {
-      callbackContext.success(getOutputDevices());
-      return true;
-    } else if (action.equals(ACTION_GET_AUDIO_MODE)) {
-      callbackContext.success(getAudioMode());
-      return true;
-    } else if (action.equals(ACTION_IS_SPEAKER_ON)) {
-      callbackContext.success(isSpeakerphoneOn().toString());
-      return true;
-    } else if (action.equals(ACTION_IS_BLUETOOTH_ON)) {
-      callbackContext.success(isBluetoothScoOn().toString());
-      return true;
-    } else if (action.equals(ACTION_HAS_EARPIECE)) {
-      callbackContext.success(hasBuiltInEarpiece().toString());
-      return true;
-    } else if (action.equals(ACTION_HAS_SPEAKER)) {
-      callbackContext.success(hasBuiltInSpeaker().toString());
-      return true;
+    switch (action) {
+      case ACTION_SET_AUDIO_MODE:
+        if (!setAudioMode(args.getString(0))) {
+          callbackContext.error("Invalid audio mode");
+          return false;
+        }
+        return true;
+      case ACTION_SET_BLUETOOTH_ON:
+        setBluetoothScoOn(args.getBoolean(0));
+        return true;
+      case ACTION_SET_SPEAKER_ON:
+        setSpeakerphoneOn(args.getBoolean(0));
+        return true;
+      case ACTION_GET_OUTPUT_DEVICES:
+        callbackContext.success(getOutputDevices());
+        return true;
+      case ACTION_GET_AUDIO_MODE:
+        callbackContext.success(getAudioMode());
+        return true;
+      case ACTION_IS_SPEAKER_ON:
+        callbackContext.success(isSpeakerphoneOn().toString());
+        return true;
+      case ACTION_IS_BLUETOOTH_ON:
+        callbackContext.success(isBluetoothScoOn().toString());
+        return true;
+      case ACTION_HAS_EARPIECE:
+        callbackContext.success(hasBuiltInEarpiece().toString());
+        return true;
+      case ACTION_HAS_SPEAKER:
+        callbackContext.success(hasBuiltInSpeaker().toString());
+        return true;
     }
 
     callbackContext.error("Invalid action");
@@ -71,7 +71,6 @@ public class AudioTogglePlugin extends CordovaPlugin {
     try {
       AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
 
-      JSONArray retdevs = new JSONArray();
       for (AudioDeviceInfo dev : devices) {
         if (dev.isSink()) {
           if (dev.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
@@ -93,7 +92,6 @@ public class AudioTogglePlugin extends CordovaPlugin {
     try {
       AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
 
-      JSONArray retdevs = new JSONArray();
       for (AudioDeviceInfo dev : devices) {
         if (dev.isSink()) {
           if (dev.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
@@ -112,12 +110,12 @@ public class AudioTogglePlugin extends CordovaPlugin {
     final Context context = webView.getContext();
     final AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
-    audioManager.setBluetoothScoOn(on);
     if (on) {
       audioManager.startBluetoothSco();
     } else {
       audioManager.stopBluetoothSco();
     }
+    audioManager.setBluetoothScoOn(on);
   }
 
   public void setSpeakerphoneOn(boolean on) {
@@ -131,31 +129,32 @@ public class AudioTogglePlugin extends CordovaPlugin {
     final Context context = webView.getContext();
     final AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
-    if (mode.equals("bluetooth")) {
-      audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-      audioManager.setBluetoothScoOn(true);
-      audioManager.startBluetoothSco();
-      return true;
-    } else if (mode.equals("earpiece")) {
-      audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-      audioManager.stopBluetoothSco();
-      audioManager.setBluetoothScoOn(false);
-      audioManager.setSpeakerphoneOn(false);
-      return true;
-    } else if (mode.equals("speaker")) {
-      audioManager.setMode(AudioManager.MODE_NORMAL);
-      audioManager.stopBluetoothSco();
-      audioManager.setBluetoothScoOn(false);
-      audioManager.setSpeakerphoneOn(true);
-      return true;
-    } else if (mode.equals("ringtone")) {
-      audioManager.setMode(AudioManager.MODE_RINGTONE);
-      audioManager.setSpeakerphoneOn(false);
-      return true;
-    } else if (mode.equals("normal")) {
-      audioManager.setMode(AudioManager.MODE_NORMAL);
-      audioManager.setSpeakerphoneOn(false);
-      return true;
+    switch (mode) {
+      case "bluetooth":
+        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        audioManager.startBluetoothSco();
+        audioManager.setBluetoothScoOn(true);
+        return true;
+      case "earpiece":
+        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        audioManager.stopBluetoothSco();
+        audioManager.setBluetoothScoOn(false);
+        audioManager.setSpeakerphoneOn(false);
+        return true;
+      case "speaker":
+        audioManager.setMode(AudioManager.MODE_NORMAL);
+        audioManager.stopBluetoothSco();
+        audioManager.setBluetoothScoOn(false);
+        audioManager.setSpeakerphoneOn(true);
+        return true;
+      case "ringtone":
+        audioManager.setMode(AudioManager.MODE_RINGTONE);
+        audioManager.setSpeakerphoneOn(false);
+        return true;
+      case "normal":
+        audioManager.setMode(AudioManager.MODE_NORMAL);
+        audioManager.setSpeakerphoneOn(false);
+        return true;
     }
 
     return false;
@@ -195,16 +194,22 @@ public class AudioTogglePlugin extends CordovaPlugin {
     boolean isBluetoothScoOn = audioManager.isBluetoothScoOn();
     boolean isSpeakerphoneOn = audioManager.isSpeakerphoneOn();
 
-    if (mode == AudioManager.MODE_IN_COMMUNICATION && isBluetoothScoOn) {
-      return "bluetooth";
-    } else if (mode == AudioManager.MODE_IN_COMMUNICATION && !isBluetoothScoOn && !isSpeakerphoneOn) {
-      return "earpiece";
-    } else if (mode == AudioManager.MODE_IN_COMMUNICATION && !isBluetoothScoOn && isSpeakerphoneOn) {
+    if (mode == AudioManager.MODE_IN_COMMUNICATION) {
+      if (isBluetoothScoOn) {
+        return "bluetooth";
+      }
+      if (isSpeakerphoneOn) {
+        return "speaker";
+      }
       return "speaker";
-    } else if (mode == AudioManager.MODE_RINGTONE && !isSpeakerphoneOn) {
-      return "ringtone";
-    } else if (mode == AudioManager.MODE_NORMAL && !isSpeakerphoneOn) {
-      return "normal";
+    }
+    if (!isSpeakerphoneOn) {
+      if (mode == AudioManager.MODE_RINGTONE) {
+        return "ringtone";
+      }
+      if (mode == AudioManager.MODE_NORMAL) {
+        return "normal";
+      }
     }
 
     return "normal";
