@@ -50,13 +50,18 @@ NSString *const AudioOptionsAvailable = @"audioOutputsAvailable";
 	return hasOptions;
 }
 
+- (void) getOutputDevices:(CDVInvokedUrlCommand *)command {
+	CDVPluginResult* pluginResult = nil;
+	pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary: @{@"devices": @[]}];
+	[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
 
 - (BOOL) getAudioMode:(CDVInvokedUrlCommand *)command {
 	CDVPluginResult* pluginResult = nil;
 	pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
 	[pluginResult setKeepCallbackAsBool:YES];
 	[self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-  return YES;
+	return YES;
 }
 
 - (void)setAudioMode:(CDVInvokedUrlCommand *)command
