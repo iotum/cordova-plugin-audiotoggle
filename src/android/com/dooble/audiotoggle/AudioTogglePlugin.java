@@ -5,11 +5,17 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 import android.media.AudioManager;
 import android.media.AudioDeviceInfo;
 import java.util.List;
+import java.util.HashMap;
+import java.util.ArrayList;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,6 +30,21 @@ public class AudioTogglePlugin extends CordovaPlugin {
   public static final String ACTION_IS_BLUETOOTH_ON = "isBluetoothScoOn";
   public static final String ACTION_HAS_EARPIECE = "hasBuiltInEarpiece";
   public static final String ACTION_HAS_SPEAKER = "hasBuiltInSpeaker";
+  public static final String ACTION_REGISTER_LISTENER = "registerListener";
+
+  private HashMap<String, ArrayList<CallbackContext>> eventCallbacks;
+  private BroadcastReceiver audioReceiver;
+  private boolean lastSpeakerState = false;
+
+  @Override
+  protected void pluginInitialize() {
+    eventCallbacks = new HashMap<String, ArrayList<CallbackContext>>();
+    eventCallbacks.put("speaker", new ArrayList<CallbackContext>());
+    eventCallbacks.put("audioOutputsAvailable", new ArrayList<CallbackContext>());
+
+    setupAudioReceiver();
+    lastSpeakerState = isSpeakerphoneOn();
+  }
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -57,6 +78,9 @@ public class AudioTogglePlugin extends CordovaPlugin {
         return true;
       case ACTION_HAS_SPEAKER:
         callbackContext.success(hasBuiltInSpeaker().toString());
+        return true;
+      case ACTION_REGISTER_LISTENER:
+        registerListener(args.getString(0), callbackContext);
         return true;
     }
 
@@ -227,5 +251,66 @@ public class AudioTogglePlugin extends CordovaPlugin {
     final AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
 
     return audioManager.isSpeakerphoneOn();
+  }
+
+  public void registerListener(String eventName, CallbackContext callbackContext) {
+    if (eventCallbacks.containsKey(eventName)) {
+      eventCallbacks.get(eventName).add(callbackContext);
+      
+      // Keep the callback active for future events
+      PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+      result.setKeepCallback(true);
+      callbackContext.sendPluginResult(result);
+    } else {
+      callbackContext.error("Invalid event name: " + eventName);
+    }
+  }
+
+  private void setupAudioReceiver() {
+    audioReceiver = new BroadcastReceiver() {
+      @Override
+      public void onReceive(Context context, Intent intent) {
+        handleAudioRouteChange();
+      }
+    };
+
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+    filter.addAction(AudioManager.ACTION_HEADSET_PLUG);
+    filter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
+    
+    if (cordova != null && cordova.getActivity() != null) {
+      cordova.getActivity().registerReceiver(audioReceiver, filter);
+    }
+  }
+
+  private void handleAudioRouteChange() {
+    boolean currentSpeakerState = isSpeakerphoneOn();
+    
+    if (currentSpeakerState != lastSpeakerState) {
+      lastSpeakerState = currentSpeakerState;
+      
+      // Notify speaker event listeners
+      ArrayList<CallbackContext> speakerCallbacks = eventCallbacks.get("speaker");
+      if (speakerCallbacks != null) {
+        for (CallbackContext callback : speakerCallbacks) {
+          PluginResult result = new PluginResult(PluginResult.Status.OK, currentSpeakerState);
+          result.setKeepCallback(true);
+          callback.sendPluginResult(result);
+        }
+      }
+    }
+  }
+
+  @Override
+  public void onDestroy() {
+    if (audioReceiver != null && cordova != null && cordova.getActivity() != null) {
+      try {
+        cordova.getActivity().unregisterReceiver(audioReceiver);
+      } catch (IllegalArgumentException e) {
+        // Receiver was not registered
+      }
+    }
+    super.onDestroy();
   }
 }
